@@ -69,11 +69,3 @@ python main.py
 * Room generation
 * Transformer placement
 * CAD output generation
-
-## Future Work
-
-* HT panel placement
-* RMU placement
-* DG placement
-* Real CAD block integration
-* Excel-driven configuration
