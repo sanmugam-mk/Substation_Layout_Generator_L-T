@@ -207,16 +207,6 @@ Contains engineering constraints such as:
 
 ---
 
-## Engineering Benefits
-
-- Reduces manual drafting effort
-- Produces consistent layouts
-- Speeds up preliminary design work
-- Enables rapid layout iterations
-- Helps standardize substation design
-
----
-
 ## Current Status
 
 ### Completed
@@ -229,16 +219,9 @@ Contains engineering constraints such as:
 - Room dimension annotations
 - Dynamic room sizing
 
-### In Progress
-
-- Layout optimization
-- Clearance validation checks
-- Automatic design-rule verification
-- Multiple substation configuration support
-
 ---
 
-## Author
+## Done by 
 
 Sanmugasundaram M.K.
 
