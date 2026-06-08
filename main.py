@@ -12,18 +12,27 @@ def main():
     data = collect_inputs()
 
     print("\n Calculating room layout and placing equipment...")
-    placed, room_w, room_h = calculate_layout(data)
+    placed, room_w, room_h, ancillary_rooms = calculate_layout(data)
 
     print(f"\n Layout result:")
-    print(f"   Room size : {room_w} mm × {room_h} mm")
+    print(f"   Room size : {room_w} mm x {room_h} mm")
     for eq in placed:
-        print(f"   {eq.label.replace(chr(10),' | '):30s}  pos=({eq.x},{eq.y})  size={eq.length}×{eq.width} mm")
+        print(f"   {eq.label.replace(chr(10),' | '):30s}  pos=({eq.x},{eq.y})  size={eq.length}x{eq.width} mm")
 
     # Timestamped filename — each run creates a new file, no permission conflicts
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out = os.path.join(os.getcwd(), "output", f"substation_layout_{timestamp}.dxf")
-    generate_dxf(placed, room_w, room_h, data, output_path=out)
+    generate_dxf(
+    placed,
+    room_w,
+    room_h,
+    data,
+    ancillary_rooms=ancillary_rooms,
+    output_path=out
+    )
 
 
 if __name__ == "__main__":
     main()
+
+
