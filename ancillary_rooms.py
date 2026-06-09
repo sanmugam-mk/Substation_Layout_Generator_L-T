@@ -3,42 +3,15 @@
 #  Original sizes (mm) — NO scaling, expand room_w if needed
 # ─────────────────────────────────────────────────────────────
 ANCILLARY_GAP = 1500   # gap between DG right edge and rooms
+
 ROOM_DEFS = [
-    {
-        "name": "UPS &\nBATTERY\nROOM",
-        "length": 3500,
-        "width": 4000,
-        "col": "A",
-    },
-
-    {
-        "name": "SCADA\nROOM",
-        "length": 3500,
-        "width": 4000,
-        "col": "A",
-    },
-
-    {
-        "name": "TOILET",
-        "length": 3500,
-        "width": 1600,
-        "col": "A",
-    },
-
-    {
-        "name": "MAINTENANCE &\nCONTROL\nROOM",
-        "length": 3500,
-        "width": 4400,
-        "col": "A",
-    },
-
-    {
-        "name": "RMU PANEL\nROOM",
-        "length": 4100,
-        "width": 4150,
-        "col": "B",
-    },
+    {"name": "UPS &\nBATTERY\nROOM",        "length": 3500, "width": 4000, "col": "A"},
+    {"name": "SCADA\nROOM",                  "length": 3500, "width": 4000, "col": "A"},
+    {"name": "TOILET",                       "length": 3500, "width": 1600, "col": "A"},
+    {"name": "MAINTENANCE &\nCONTROL\nROOM", "length": 3500, "width": 4400, "col": "A"},
+    {"name": "RMU PANEL\nROOM",              "length": 4100, "width": 4150, "col": "B"},
 ]
+
 
 def place_ancillary_rooms(placed_equipment, room_w, room_h):
     from rules import ROOM_MARGIN
@@ -54,112 +27,112 @@ def place_ancillary_rooms(placed_equipment, room_w, room_h):
     tx_y_max = max(e.y2 for e in tx_eqs)
     tx_y_min = min(e.y  for e in tx_eqs)
 
-    # ── Gap: right of DG, between TX top and DG top ───────────
-    gap_x     = dg_x_max + ANCILLARY_GAP
-    gap_y_bot = tx_y_max + ANCILLARY_GAP   # above TX
-    gap_y_top = dg_y_max - ANCILLARY_GAP   # below DG
-    avail_h   = gap_y_top - gap_y_bot
+    gap_x = dg_x_max + ANCILLARY_GAP
 
     rooms = []
 
-    # UPS + SCADA column
-    ups = next(r for r in ROOM_DEFS if "UPS" in r["name"])
-    scada = next(r for r in ROOM_DEFS if "SCADA" in r["name"])
+    # ── Col A: all 4 rooms stacked, pushed to TOP wall ────────
+    col_a_x = gap_x
+
+    ups    = next(r for r in ROOM_DEFS if "UPS"         in r["name"])
+    scada  = next(r for r in ROOM_DEFS if "SCADA"       in r["name"])
+    toilet = next(r for r in ROOM_DEFS if "TOILET"      in r["name"])
+    maint  = next(r for r in ROOM_DEFS if "MAINTENANCE" in r["name"])
+    rmu    = next(r for r in ROOM_DEFS if "RMU"         in r["name"])
+
+    # Stack order top → bottom: TOILET, MAINTENANCE, SCADA, UPS
+    col_a_order = [toilet, maint, scada, ups]
+    cy = room_h  # start from top wall, stack downward
+
+    for rd in col_a_order:
+        cy -= rd["width"]
+        rooms.append({
+            "name":   rd["name"],
+            "x":      col_a_x,
+            "y":      cy,
+            "length": rd["length"],
+            "width":  rd["width"],
+        })
+
+# ── RMU Panel — flush to RIGHT wall, top wall ─────────────
+    rmu_y        = room_h - rmu["width"]          # flush to top wall
+    rmu_actual_x = room_w - rmu["length"]         # flush to right wall
 
     rooms.append({
-        "name": ups["name"],
-        "x": gap_x,
-        "y": gap_y_bot,
-        "length": ups["length"],
-        "width": ups["width"]
-    })
-
-    rooms.append({
-        "name": scada["name"],
-        "x": gap_x,
-        "y": gap_y_bot + ups["width"],
-        "length": scada["length"],
-        "width": scada["width"]
-    })
-
-    # TOILET + MAINTENANCE column
-    toilet = next(r for r in ROOM_DEFS if r["name"] == "TOILET")
-    maint = next(r for r in ROOM_DEFS if "MAINTENANCE" in r["name"])
-
-    col2_x = gap_x + 3500
-
-    # Toilet touches top wall
-    toilet_y = room_h - toilet["width"]
-
-    rooms.append({
-        "name": toilet["name"],
-        "x": col2_x,
-        "y": toilet_y,
-        "length": toilet["length"],
-        "width": toilet["width"]
-    })
-
-    # Maintenance directly below toilet
-    maint_y = toilet_y - maint["width"]
-
-    rooms.append({
-        "name": maint["name"],
-        "x": col2_x,
-        "y": maint_y,
-        "length": maint["length"],
-        "width": maint["width"]
-    })
-
-    # RMU ROOM
-    # Touch top wall and right wall
-    rmu = next(r for r in ROOM_DEFS if "RMU" in r["name"])
-
-    rmu_x = room_w - rmu["length"] - 50
-    rmu_y = room_h - rmu["width"]
-
-    rooms.append({
-        "name": rmu["name"],
-        "x": rmu_x,
-        "y": rmu_y,
+        "name":   rmu["name"],
+        "x":      rmu_actual_x,
+        "y":      rmu_y,
         "length": rmu["length"],
-        "width": rmu["width"]
+        "width":  rmu["width"],
     })
 
-# PERFORATED ROLLING SHUTTER
-# BELOW TRANSFORMER ROW
-    SHUTTER_GAP = 1000
+    # ── UPS & Battery — directly below RMU, same X ────────────
+    ups_y = rmu_y - ups["width"]
+    for r in rooms:
+        if "UPS" in r["name"]:
+            r["x"]      = rmu_actual_x
+            r["y"]      = ups_y
+            r["length"] = rmu["length"]
+            break
 
-    shutter_y = tx_y_min - SHUTTER_GAP
+# ── Shift Col A to sit LEFT of RMU column ─────────────────
+    # RMU is at room_w - 4100, Col A (3500 wide) sits left of it
+    col_a_new_x = rmu_actual_x - 3500
 
-    print("TX bottom =", tx_y_min)
-    print("Shutter =", shutter_y)
+    for r in rooms:
+        if "UPS" not in r["name"] and "RMU" not in r["name"] and not r.get("shutter"):
+            r["x"]      = col_a_new_x
+            r["length"] = 3500   # enforce consistent width
 
-    # create one shutter for each transformer
+    # ── Expand room_w so both columns flush to right wall ──────
+    # room_w must equal rmu_actual_x + rmu length (already set)
+    # but rmu_actual_x was set from OLD room_w — recalculate
+    new_rmu_x = room_w - rmu["length"]
+    for r in rooms:
+        if "RMU" in r["name"]:
+            r["x"] = new_rmu_x
+        if "UPS" in r["name"]:
+            r["x"] = new_rmu_x
+            r["length"] = rmu["length"]
+
+    col_a_new_x = new_rmu_x - 3500
+    for r in rooms:
+        if "UPS" not in r["name"] and "RMU" not in r["name"] and not r.get("shutter"):
+            r["x"] = col_a_new_x
+    # ── Perforated Rolling Shutter — below each TX ────────────
+    SHUTTER_GAP = 200
+    shutter_y   = tx_y_min - SHUTTER_GAP - 500   # below TX bottom
+
     tx_sorted = sorted(tx_eqs, key=lambda e: e.x)
-
     for tx in tx_sorted:
         rooms.append({
-            "name": "PERFORATED\nROLLING SHUTTER",
-            "x": tx.x,
-            "y": shutter_y,
-            "length": tx.length,
-            "width": 500,
+            "name":    "PERFORATED\nROLLING SHUTTER",
+            "x":       tx.x,
+            "y":       shutter_y,
+            "length":  tx.length,
+            "width":   500,
             "shutter": True,
         })
-    max_x = max(
-        r["x"] + r["length"]
-        for r in rooms
-        if not r.get("shutter")
-        and "RMU" not in r["name"]
-    )
+
+    # ── Expand room_w if needed ───────────────────────────────
+    max_x = max(r["x"] + r["length"] for r in rooms if not r.get("shutter"))
     new_room_w = max_x + ROOM_MARGIN
     new_room_w = ((new_room_w + 499) // 500) * 500
-    room_w = max(room_w, new_room_w)
+    room_w = new_room_w
 
-    # Also ensure room_h covers rooms
-    '''max_y = max(r["y"] + r["width"] for r in rooms if not r.get("shutter"))
-    if max_y + ROOM_MARGIN > room_h:
-        room_h_new = ((max_y + ROOM_MARGIN + 499) // 500) * 500
-        room_h = max(room_h, room_h_new)'''
+    # Final pass — re-anchor everything flush to right wall
+    final_rmu_x = room_w - rmu["length"]
+    final_col_a_x = final_rmu_x - 3500
+    for r in rooms:
+        if r.get("shutter"):
+            continue
+        if "RMU" in r["name"]:
+            r["x"] = final_rmu_x
+        elif "UPS" in r["name"]:
+            r["x"] = final_rmu_x
+            r["length"] = rmu["length"]
+        else:
+            r["x"] = final_col_a_x
+            r["length"] = 3500
+
     return rooms, room_w
-
